@@ -3,6 +3,7 @@
 /node_modules
 /build
 /tmp
+postgres/
 
 # Logs
 logs
@@ -22,3 +23,5 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+/src/generated/prisma
