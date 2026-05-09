@@ -1,0 +1,16 @@
+services:
+  # Users
+  evoventa-api:
+    build: 
+      context: ./
+      dockerfile: dockerfile.prod
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+    image: evoventa-api-prod
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - CLIENT_URLS=${CLIENT_URLS}
+

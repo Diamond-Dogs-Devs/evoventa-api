@@ -1,0 +1,27 @@
+services:
+  # Users
+  evoventa-api:
+    depends_on:
+      - evoventa-db
+    build: .
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/usr/src/app/src
+    command: npm run start:dev
+    environment:
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:123456@evoventa-db:5432/evoventadb?schema=public
+      - CLIENT_URLS=http://localhost:4000
+  # Users DB
+  evoventa-db:
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - .:/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=evoventadb
