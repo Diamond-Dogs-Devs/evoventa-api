@@ -1,5 +1,6 @@
 import {
-  BadRequestException,
+  HttpStatus,
+  HttpException,
   Injectable,
   Logger,
   OnModuleInit,
@@ -29,7 +30,10 @@ export class UsersService extends PrismaClient implements OnModuleInit {
     });
 
     if (existingUserByEmail) {
-      throw new BadRequestException('User with this email already exists');
+      throw new HttpException(
+        'User with this email already exists',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const existingEmployee = await this.user.findUnique({
@@ -37,7 +41,10 @@ export class UsersService extends PrismaClient implements OnModuleInit {
     });
 
     if (existingEmployee) {
-      throw new BadRequestException('Employee number already exists');
+      throw new HttpException(
+        'Employee number already exists',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     try {
@@ -51,7 +58,7 @@ export class UsersService extends PrismaClient implements OnModuleInit {
       });
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException('Error creating user');
+      throw new HttpException('Error creating user', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -62,14 +69,14 @@ export class UsersService extends PrismaClient implements OnModuleInit {
     });
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     return user;
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+    const { page, limit } = paginationDto;
 
     const total = await this.user.count({
       where: { isActive: true },
@@ -104,7 +111,10 @@ export class UsersService extends PrismaClient implements OnModuleInit {
     });
 
     if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
+      throw new HttpException(
+        `User with id ${id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return user;
