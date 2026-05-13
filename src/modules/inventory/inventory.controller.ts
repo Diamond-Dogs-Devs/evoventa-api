@@ -7,14 +7,16 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { InventoryService } from './inventory.service';
 
-import { PaginationDto } from '../../common';
+import { AuthGuard, PaginationDto } from '../../common';
 import { CreateInventoryDto, UpdateInventoryDto } from './dto';
 
 @Controller('inventory')
+@UseGuards(AuthGuard)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
