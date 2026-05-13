@@ -7,14 +7,16 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { ClientsService } from './clients.service';
 
-import { PaginationDto } from '../../common';
+import { AuthGuard, PaginationDto } from '../../common';
 import { CreateClientDto, UpdateClientDto } from './dto';
 
 @Controller('clients')
+@UseGuards(AuthGuard)
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
