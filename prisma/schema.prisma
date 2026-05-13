@@ -13,6 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//USER
 enum Role {
   USER
   ADMIN
@@ -30,4 +31,113 @@ model User {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+//PRODUCT
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
+  DISCONTINUED
+}
+
+model Product {
+  id      String  @id @default(uuid())
+  barcode String  @unique
+  sku     String? @unique
+
+  name     String
+  price    Float
+  brand    String @default("Generic")
+  category String @default("General")
+
+  status   ProductStatus @default(AVAILABLE)
+  isActive Boolean       @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([isActive])
+}
+
+//CLIENT
+model Client {
+  id        String @id @default(uuid())
+  email     String @unique
+  name      String
+  telephone String
+  address   String
+  rfc       String
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//INVENTORY
+model Inventory {
+  id            String          @id @default(uuid())
+  code          String          @unique
+  name          String
+  description   String
+  InventoryItem InventoryItem[]
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([isActive])
+}
+
+model InventoryItem {
+  id          String    @id @default(uuid())
+  productId   String
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  quantity    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, inventoryId])
+}
+
+//Order
+enum OrderType {
+  QUOTATION
+  ORDER
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id          String @id @default(uuid())
+  orderNumber String @unique
+  totalAmount Float
+  totalItems  Int
+
+  type     OrderType   @default(ORDER)
+  status   OrderStatus @default(PENDING)
+  isActive Boolean     @default(true)
+
+  clientId String
+  userId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  OrderItem OrderItem[]
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  productId String
+  quantity  Int
+  price     Float
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 }

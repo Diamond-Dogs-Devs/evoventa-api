@@ -13,6 +13,8 @@ services:
       - PORT=3000
       - DATABASE_URL=postgresql://postgres:123456@evoventa-db:5432/evoventadb?schema=public
       - CLIENT_URLS=http://localhost:4000
+      - JWT_SECRET=${JWT_SECRET}
+
   # Users DB
   evoventa-db:
     image: postgres:16.2

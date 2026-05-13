@@ -12,5 +12,7 @@ services:
     environment:
       - PORT=${PORT}
       - DATABASE_URL=${DATABASE_URL}
-      - CLIENT_URLS=${CLIENT_URLS}
+      - CLIENT_URLS=${CLIENT_URLS}\
+      - JWT_SECRET=${JWT_SECRET}
+
 

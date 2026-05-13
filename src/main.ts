@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { envs } from './config/envs';
+import { HttpCustomExceptionFilter } from './common/exceptions/HttpCustomExceptionFilter';
 
 async function bootstrap() {
   const logger = new Logger('Main-Gateway');
@@ -16,6 +17,8 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  app.useGlobalFilters(new HttpCustomExceptionFilter());
 
   await app.listen(envs.port);
 
