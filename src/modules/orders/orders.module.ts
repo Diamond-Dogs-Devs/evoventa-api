@@ -5,7 +5,7 @@ import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 
 @Module({
-  imports: [ProductsModule, AuthModule],
+  imports: [AuthModule, ProductsModule],
   controllers: [OrdersController],
   providers: [OrdersService],
 })
