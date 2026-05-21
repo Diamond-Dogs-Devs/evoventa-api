@@ -41,9 +41,11 @@ enum ProductStatus {
 }
 
 model Product {
-  id      String  @id @default(uuid())
-  barcode String  @unique
-  sku     String? @unique
+  id            String  @id @default(uuid())
+  barcode       String  @unique
+  sku           String? @unique
+  imageUrl      String?
+  imagePublicId String?
 
   name     String
   price    Float

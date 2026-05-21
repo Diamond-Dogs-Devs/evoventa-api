@@ -1,5 +1,12 @@
 import { ProductStatus } from '@prisma/client';
-import { IsString, IsNumber, IsOptional, Min, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsEnum,
+  IsUrl,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { StatusList } from '../enum/status.enum';
 
@@ -10,6 +17,14 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   sku?: string;
+
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  imagePublicId?: string;
 
   @IsString()
   name!: string;
