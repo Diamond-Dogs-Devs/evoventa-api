@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
-import { PaginationDto } from '../../common';
+import { PaginationDto, cloudinaryConfig } from '../../common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -15,8 +15,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('Products-Service');
 
-  onModuleInit() {
-    this.$connect();
+  async onModuleInit() {
+    await this.$connect();
     this.logger.log('Database connected');
   }
   async create(createProductDto: CreateProductDto) {
@@ -93,9 +93,25 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
-    await this.findOne(id);
+    const product = await this.findOne(id);
 
-    return await this.product.update({ where: { id }, data: updateProductDto });
+    const newImagePublicId = updateProductDto.imagePublicId;
+
+    const oldImagePublicId = product.imagePublicId;
+
+    const imageChanged =
+      newImagePublicId &&
+      oldImagePublicId &&
+      newImagePublicId !== oldImagePublicId;
+
+    if (imageChanged) {
+      await cloudinaryConfig.uploader.destroy(oldImagePublicId);
+    }
+
+    return await this.product.update({
+      where: { id },
+      data: updateProductDto,
+    });
   }
 
   async remove(id: string) {

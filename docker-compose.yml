@@ -14,6 +14,9 @@ services:
       - DATABASE_URL=postgresql://postgres:123456@evoventa-db:5432/evoventadb?schema=public
       - CLIENT_URLS=http://localhost:4000
       - JWT_SECRET=${JWT_SECRET}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
 
   # Users DB
   evoventa-db:

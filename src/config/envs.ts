@@ -5,6 +5,9 @@ interface EnvVars {
   CLIENT_URLS: string[];
   DATABASE_URL: string;
   JWT_SECRET: string;
+  CLOUDINARY_CLOUD_NAME: string;
+  CLOUDINARY_API_KEY: string;
+  CLOUDINARY_API_SECRET: string;
 }
 
 const envsSchema = joi
@@ -13,6 +16,9 @@ const envsSchema = joi
     CLIENT_URLS: joi.array().items(joi.string()).required(),
     DATABASE_URL: joi.string().required(),
     JWT_SECRET: joi.string().required(),
+    CLOUDINARY_CLOUD_NAME: joi.string().required(),
+    CLOUDINARY_API_KEY: joi.string().required(),
+    CLOUDINARY_API_SECRET: joi.string().required(),
   })
   .unknown(true);
 
@@ -32,4 +38,7 @@ export const envs = {
   clientUrls: envVars.CLIENT_URLS,
   databaseUrl: envVars.DATABASE_URL,
   jwtKey: envVars.JWT_SECRET,
+  cloudinaryCloudName: envVars.CLOUDINARY_CLOUD_NAME,
+  cloudinaryApiKey: envVars.CLOUDINARY_API_KEY,
+  cloudinaryApiSecret: envVars.CLOUDINARY_API_SECRET,
 };
