@@ -7,51 +7,73 @@ import {
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
-import { PaginationDto, cloudinaryConfig } from '../../common';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { PaginationDto } from '../../common';
+import { CreateProductDto, UpdateProductDto } from './dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('Products-Service');
 
+  constructor(private readonly cloudinaryService: CloudinaryService) {
+    super();
+  }
+
   async onModuleInit() {
     await this.$connect();
     this.logger.log('Database connected');
   }
+
   async create(createProductDto: CreateProductDto) {
-    const { barcode, sku } = createProductDto;
-
-    if (barcode) {
-      const existingBarcode = await this.product.findUnique({
-        where: { barcode: createProductDto.barcode },
-      });
-      if (existingBarcode) {
-        throw new HttpException(
-          `Product with barcode "${createProductDto.barcode}" already exists`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
-
-    if (sku) {
-      const existingSku = await this.product.findUnique({
-        where: { sku: createProductDto.sku },
-      });
-      if (existingSku) {
-        throw new HttpException(
-          `Product with SKU "${createProductDto.sku}" already exists`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
-
     try {
+      const { barcode, sku } = createProductDto;
+
+      if (barcode) {
+        const existingBarcode = await this.product.findUnique({
+          where: { barcode },
+        });
+
+        if (existingBarcode) {
+          throw new HttpException(
+            `Product with barcode "${barcode}" already exists`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      if (sku) {
+        const existingSku = await this.product.findUnique({
+          where: { sku },
+        });
+
+        if (existingSku) {
+          throw new HttpException(
+            `Product with SKU "${sku}" already exists`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
       return await this.product.create({
         data: createProductDto,
       });
     } catch (error) {
+      if (createProductDto.imagePublicId) {
+        try {
+          await this.cloudinaryService.deleteImage(
+            createProductDto.imagePublicId,
+          );
+        } catch (cloudinaryError) {
+          this.logger.error('Cloudinary rollback failed', cloudinaryError);
+        }
+      }
+
       this.logger.error(error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new HttpException('Error creating product', HttpStatus.BAD_REQUEST);
     }
   }
@@ -95,41 +117,45 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   async update(id: string, updateProductDto: UpdateProductDto) {
     const product = await this.findOne(id);
 
+    const oldImagePublicId = product.imagePublicId;
     const newImagePublicId = updateProductDto.imagePublicId;
 
-    const oldImagePublicId = product.imagePublicId;
+    const hasNewImage =
+      newImagePublicId && newImagePublicId !== oldImagePublicId;
 
-    const imageChanged =
-      newImagePublicId &&
-      oldImagePublicId &&
-      newImagePublicId !== oldImagePublicId;
-
-    if (imageChanged) {
-      await cloudinaryConfig.uploader.destroy(oldImagePublicId);
+    if (hasNewImage && oldImagePublicId) {
+      try {
+        await this.cloudinaryService.deleteImage(oldImagePublicId);
+      } catch (err) {
+        this.logger.error('Cloudinary delete failed', err);
+      }
     }
 
-    return await this.product.update({
+    return this.product.update({
       where: { id },
       data: updateProductDto,
     });
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    //Hard delete
-    // return this.product.delete({
-    //   where: { id },
-    // });
+    const product = await this.findOne(id);
 
-    //Soft delete
-    const product = await this.product.update({
+    if (product.imagePublicId) {
+      try {
+        await this.cloudinaryService.deleteImage(product.imagePublicId);
+      } catch (err) {
+        this.logger.error('Cloudinary delete failed', err);
+      }
+    }
+
+    return this.product.update({
       where: { id },
       data: {
         isActive: false,
+        imageUrl: null,
+        imagePublicId: null,
       },
     });
-
-    return product;
   }
 
   async validateProducts(ids: string[]) {
