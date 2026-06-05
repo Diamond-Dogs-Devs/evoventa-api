@@ -100,10 +100,30 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
   }
 
   async findAllInventories(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
+    const { page, limit, search } = paginationDto;
+
+    const where = {
+      isActive: true,
+      OR: search
+        ? [
+            {
+              code: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+          ]
+        : undefined,
+    };
 
     const totalPages = await this.inventory.count({
-      where: { isActive: true },
+      where,
     });
 
     const lastPage = Math.ceil(totalPages / limit);
@@ -112,7 +132,7 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
       data: await this.inventory.findMany({
         skip: (page - 1) * limit,
         take: limit,
-        where: { isActive: true },
+        where,
       }),
 
       meta: {

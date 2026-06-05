@@ -9,17 +9,17 @@ import { InventoryItemDto } from './inventory-item.dto';
 
 export class CreateInventoryDto {
   @IsString()
-  code: string;
+  code!: string;
 
   @IsString()
-  name: string;
+  name!: string;
 
   @IsString()
-  description: string;
+  description!: string;
 
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => InventoryItemDto)
-  items: InventoryItemDto[];
+  items!: InventoryItemDto[];
 }

@@ -79,10 +79,36 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
+    const { page, limit, search } = paginationDto;
+
+    const where = {
+      isActive: true,
+      OR: search
+        ? [
+            {
+              barcode: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              sku: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+          ]
+        : undefined,
+    };
 
     const totalPages = await this.product.count({
-      where: { isActive: true },
+      where,
     });
     const lastPage = Math.ceil(totalPages / limit);
 
@@ -90,7 +116,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
       data: await this.product.findMany({
         skip: (page - 1) * limit,
         take: limit,
-        where: { isActive: true },
+        where,
       }),
       meta: {
         total: totalPages,
