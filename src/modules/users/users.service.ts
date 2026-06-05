@@ -76,27 +76,43 @@ export class UsersService extends PrismaClient implements OnModuleInit {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
+    const { page, limit, search } = paginationDto;
 
-    const total = await this.user.count({
-      where: { isActive: true },
+    const where = {
+      isActive: true,
+      OR: search
+        ? [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              email: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+          ]
+        : undefined,
+    };
+
+    const totalPages = await this.user.count({
+      where,
     });
-
-    const lastPage = Math.ceil(total / limit);
-
-    const data = await this.user.findMany({
-      skip: (page - 1) * limit,
-      take: limit,
-      where: { isActive: true },
-      select: userSelect,
-    });
+    const lastPage = Math.ceil(totalPages / limit);
 
     return {
-      data,
+      data: await this.user.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        where,
+      }),
       meta: {
-        total,
-        page,
-        lastPage,
+        total: totalPages,
+        page: page,
+        lastPage: lastPage,
       },
     };
   }
