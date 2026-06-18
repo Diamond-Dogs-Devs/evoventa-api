@@ -6,6 +6,7 @@ import {
   IsMobilePhone,
   IsEnum,
   IsOptional,
+  IsUrl,
 } from 'class-validator';
 import { RoleList } from '../enum/role.enum';
 
@@ -28,4 +29,12 @@ export class CreateUserDto {
   @IsEnum(RoleList, { message: `Possible role values are ${RoleList}` })
   @IsOptional()
   role: Role = Role.USER;
+
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  imagePublicId?: string;
 }

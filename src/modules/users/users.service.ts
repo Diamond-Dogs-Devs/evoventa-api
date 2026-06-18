@@ -7,15 +7,24 @@ import {
 } from '@nestjs/common';
 
 import * as bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 
 import { PaginationDto } from '../../common';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { userSelect } from './prisma/user.select';
+import { CacheService } from '../cache/cache.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('Users-Service');
+
+  constructor(
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly cacheService: CacheService,
+  ) {
+    super();
+  }
 
   async onModuleInit() {
     await this.$connect();
@@ -23,32 +32,32 @@ export class UsersService extends PrismaClient implements OnModuleInit {
   }
 
   async create(createUserDto: CreateUserDto) {
-    const { employeeNumber, password, ...rest } = createUserDto;
-
-    const existingUserByEmail = await this.user.findUnique({
-      where: { email: rest.email },
-    });
-
-    if (existingUserByEmail) {
-      throw new HttpException(
-        'User with this email already exists',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const existingEmployee = await this.user.findUnique({
-      where: { employeeNumber },
-    });
-
-    if (existingEmployee) {
-      throw new HttpException(
-        'Employee number already exists',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     try {
-      return await this.user.create({
+      const { employeeNumber, password, ...rest } = createUserDto;
+
+      const existingUserByEmail = await this.user.findUnique({
+        where: { email: rest.email },
+      });
+
+      if (existingUserByEmail) {
+        throw new HttpException(
+          'User with this email already exists',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const existingEmployee = await this.user.findUnique({
+        where: { employeeNumber },
+      });
+
+      if (existingEmployee) {
+        throw new HttpException(
+          'Employee number already exists',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const user = await this.user.create({
         data: {
           ...rest,
           employeeNumber,
@@ -56,8 +65,21 @@ export class UsersService extends PrismaClient implements OnModuleInit {
         },
         select: userSelect,
       });
+      return user;
     } catch (error) {
+      if (createUserDto.imagePublicId) {
+        try {
+          await this.cloudinaryService.deleteImage(createUserDto.imagePublicId);
+        } catch (cloudinaryError) {
+          this.logger.error('Cloudinary rollback failed', cloudinaryError);
+        }
+      }
+
       this.logger.error(error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException('Error creating user', HttpStatus.BAD_REQUEST);
     }
   }
@@ -117,7 +139,14 @@ export class UsersService extends PrismaClient implements OnModuleInit {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<User> {
+    const cacheKey = `user:${id}`;
+    const cachedUser = await this.cacheService.get<User>(cacheKey);
+
+    if (cachedUser) {
+      return cachedUser;
+    }
+
     const user = await this.user.findFirst({
       where: {
         id,
@@ -133,26 +162,63 @@ export class UsersService extends PrismaClient implements OnModuleInit {
       );
     }
 
+    await this.cacheService.set(cacheKey, user, 300);
+
     return user;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    await this.findOne(id);
+    const cacheKey = `user:${id}`;
+    const user = await this.findOne(id);
 
-    return this.user.update({
+    const oldImagePublicId = user.imagePublicId;
+    const newImagePublicId = updateUserDto.imagePublicId;
+
+    const hasNewImage =
+      newImagePublicId && newImagePublicId !== oldImagePublicId;
+
+    if (hasNewImage && oldImagePublicId) {
+      try {
+        await this.cloudinaryService.deleteImage(oldImagePublicId);
+      } catch (err) {
+        this.logger.error('Cloudinary delete failed', err);
+      }
+    }
+
+    const updatedUser = await this.user.update({
       where: { id },
       data: updateUserDto,
       select: userSelect,
     });
+
+    await this.cacheService.del(cacheKey);
+
+    return updatedUser;
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const cacheKey = `user:${id}`;
+    const user = await this.findOne(id);
 
-    return this.user.update({
+    if (user.imagePublicId) {
+      try {
+        await this.cloudinaryService.deleteImage(user.imagePublicId);
+      } catch (err) {
+        this.logger.error('Cloudinary delete failed', err);
+      }
+    }
+
+    const deleted = await this.user.update({
       where: { id },
-      data: { isActive: false },
-      select: userSelect,
+      data: {
+        isActive: false,
+        imageUrl: null,
+        imagePublicId: null,
+      },
     });
+
+    await this.cacheService.del(cacheKey);
+
+    return deleted;
   }
 }
