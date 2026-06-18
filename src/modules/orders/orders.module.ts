@@ -3,9 +3,10 @@ import { AuthModule } from '../auth/auth.module';
 import { ProductsModule } from '../products/products.module';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
-  imports: [AuthModule, ProductsModule],
+  imports: [AuthModule, ProductsModule, CacheModule],
   controllers: [OrdersController],
   providers: [OrdersService],
 })
