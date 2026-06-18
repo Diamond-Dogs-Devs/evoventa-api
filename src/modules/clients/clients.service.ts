@@ -6,6 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { CacheService } from '../cache/cache.service';
 
 import { PaginationDto } from '../../common';
 import { CreateClientDto, UpdateClientDto } from './dto';
@@ -13,6 +14,10 @@ import { CreateClientDto, UpdateClientDto } from './dto';
 @Injectable()
 export class ClientsService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('Clients-MS');
+
+  constructor(private readonly cacheService: CacheService) {
+    super();
+  }
 
   async onModuleInit() {
     await this.$connect();
@@ -85,6 +90,13 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
   }
 
   async findOne(id: string) {
+    const cacheKey = `client:${id}`;
+    const cachedClient = await this.cacheService.get(cacheKey);
+
+    if (cachedClient) {
+      return cachedClient;
+    }
+
     const client = await this.client.findFirst({
       where: { id, isActive: true },
     });
@@ -95,22 +107,37 @@ export class ClientsService extends PrismaClient implements OnModuleInit {
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    await this.cacheService.set(cacheKey, client, 300);
+
     return client;
   }
 
   async update(id: string, updateClientDto: UpdateClientDto) {
-    await this.findOne(id);
-
-    return this.client.update({ where: { id }, data: updateClientDto });
-  }
-
-  async remove(id: string) {
+    const cacheKey = `client:${id}`;
     await this.findOne(id);
 
     const client = await this.client.update({
       where: { id },
+      data: updateClientDto,
+    });
+
+    await this.cacheService.del(cacheKey);
+
+    return client;
+  }
+
+  async remove(id: string) {
+    const cacheKey = `client:${id}`;
+    await this.findOne(id);
+
+    const deleted = await this.client.update({
+      where: { id },
       data: { isActive: false },
     });
-    return client;
+
+    await this.cacheService.del(cacheKey);
+
+    return deleted;
   }
 }

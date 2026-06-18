@@ -20,13 +20,15 @@ enum Role {
 }
 
 model User {
-  id             String @id @default(uuid())
-  employeeNumber String @unique
-  email          String @unique
+  id             String  @id @default(uuid())
+  employeeNumber String  @unique
+  email          String  @unique
   name           String
   telephone      String
   password       String
-  role           Role   @default(USER)
+  role           Role    @default(USER)
+  imageUrl       String?
+  imagePublicId  String?
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

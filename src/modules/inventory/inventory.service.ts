@@ -12,12 +12,16 @@ import { ProductsService } from '../products/products.service';
 import { PaginationDto } from '../../common';
 
 import { CreateInventoryDto, UpdateInventoryDto } from './dto';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class InventoryService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('InventoryService');
 
-  constructor(private readonly productsService: ProductsService) {
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly cacheService: CacheService,
+  ) {
     super();
   }
 
@@ -144,6 +148,14 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
   }
 
   async findOne(id: string) {
+    const cacheKey = `inventory:${id}`;
+
+    const cachedInventory = await this.cacheService.get(cacheKey);
+
+    if (cachedInventory) {
+      return cachedInventory;
+    }
+
     const inventory = await this.inventory.findFirst({
       where: {
         id,
@@ -161,16 +173,20 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
       );
     }
 
+    await this.cacheService.set(cacheKey, inventory, 300);
+
     return inventory;
   }
 
   async updateInventory(id: string, updateInventoryDto: UpdateInventoryDto) {
+    const cacheKey = `inventory:${id}`;
+
     await this.findOne(id);
 
     const { items, ...data } = updateInventoryDto;
 
     if (items?.length) {
-      const productIds = items.map((i) => i.productId);
+      const productIds = items.map((item) => item.productId);
 
       await this.productsService.validateProducts(productIds);
     }
@@ -181,15 +197,19 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
     });
 
     if (!items) {
-      return this.inventory.findUnique({
+      const updated = await this.inventory.findUnique({
         where: { id },
         include: {
           InventoryItem: true,
         },
       });
+
+      await this.cacheService.del(cacheKey);
+
+      return updated;
     }
 
-    const incomingIds = items.map((i) => i.productId);
+    const incomingIds = items.map((item) => item.productId);
 
     await this.inventoryItem.deleteMany({
       where: {
@@ -223,22 +243,32 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
       ),
     );
 
-    return this.inventory.findUnique({
+    const updated = await this.inventory.findUnique({
       where: { id },
       include: {
         InventoryItem: true,
       },
     });
+
+    await this.cacheService.del(cacheKey);
+
+    return updated;
   }
 
   async deleteInventory(id: string) {
+    const cacheKey = `inventory:${id}`;
+
     await this.findOne(id);
 
-    return this.inventory.update({
+    const deleted = await this.inventory.update({
       where: { id },
       data: {
         isActive: false,
       },
     });
+
+    await this.cacheService.del(cacheKey);
+
+    return deleted;
   }
 }
