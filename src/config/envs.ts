@@ -8,6 +8,7 @@ interface EnvVars {
   CLOUDINARY_CLOUD_NAME: string;
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_API_SECRET: string;
+  REDIS_URL: string;
 }
 
 const envsSchema = joi
@@ -19,6 +20,7 @@ const envsSchema = joi
     CLOUDINARY_CLOUD_NAME: joi.string().required(),
     CLOUDINARY_API_KEY: joi.string().required(),
     CLOUDINARY_API_SECRET: joi.string().required(),
+    REDIS_URL: joi.string().required(),
   })
   .unknown(true);
 
@@ -41,4 +43,5 @@ export const envs = {
   cloudinaryCloudName: envVars.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: envVars.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: envVars.CLOUDINARY_API_SECRET,
+  redisUrl: envVars.REDIS_URL,
 };

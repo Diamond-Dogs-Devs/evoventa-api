@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { CacheModule } from './modules/cache/cache.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
     ClientsModule,
     InventoryModule,
     CloudinaryModule,
+    CacheModule,
   ],
   controllers: [AppController],
 })
