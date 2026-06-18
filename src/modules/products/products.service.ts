@@ -5,17 +5,22 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Product } from '@prisma/client';
+
+import { CacheService } from '../cache/cache.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 import { PaginationDto } from '../../common';
 import { CreateProductDto, UpdateProductDto } from './dto';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('Products-Service');
 
-  constructor(private readonly cloudinaryService: CloudinaryService) {
+  constructor(
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly cacheService: CacheService,
+  ) {
     super();
   }
 
@@ -54,9 +59,11 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
         }
       }
 
-      return await this.product.create({
+      const product = await this.product.create({
         data: createProductDto,
       });
+
+      return product;
     } catch (error) {
       if (createProductDto.imagePublicId) {
         try {
@@ -110,6 +117,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
     const totalPages = await this.product.count({
       where,
     });
+
     const lastPage = Math.ceil(totalPages / limit);
 
     return {
@@ -126,9 +134,19 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Product> {
+    const cacheKey = `product:${id}`;
+    const cachedProduct = await this.cacheService.get<Product>(cacheKey);
+
+    if (cachedProduct) {
+      return cachedProduct;
+    }
+
     const product = await this.product.findFirst({
-      where: { id, isActive: true },
+      where: {
+        id,
+        isActive: true,
+      },
     });
 
     if (!product) {
@@ -137,10 +155,14 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    await this.cacheService.set(cacheKey, product, 300);
+
     return product;
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+    const cacheKey = `product:${id}`;
     const product = await this.findOne(id);
 
     const oldImagePublicId = product.imagePublicId;
@@ -157,13 +179,18 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    return this.product.update({
+    const updated = await this.product.update({
       where: { id },
       data: updateProductDto,
     });
+
+    await this.cacheService.del(cacheKey);
+
+    return updated;
   }
 
   async remove(id: string) {
+    const cacheKey = `product:${id}`;
     const product = await this.findOne(id);
 
     if (product.imagePublicId) {
@@ -174,7 +201,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    return this.product.update({
+    const deleted = await this.product.update({
       where: { id },
       data: {
         isActive: false,
@@ -182,6 +209,10 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
         imagePublicId: null,
       },
     });
+
+    await this.cacheService.del(cacheKey);
+
+    return deleted;
   }
 
   async validateProducts(ids: string[]) {
