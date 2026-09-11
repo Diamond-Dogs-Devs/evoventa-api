@@ -64,7 +64,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
         );
       }
 
-      return acc + product.price * orderItem.quantity;
+      return acc + product.salePrice * orderItem.quantity;
     }, 0);
 
     const totalItems = createOrderDto.items.reduce((acc, orderItem) => {
@@ -88,7 +88,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
                 );
 
                 return {
-                  price: product?.price ?? 0,
+                  price: product?.salePrice ?? 0,
                   productId: orderItem.productId,
                   quantity: orderItem.quantity,
                 };

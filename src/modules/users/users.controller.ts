@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Param,
   Query,
@@ -13,17 +12,17 @@ import {
 import { UsersService } from './users.service';
 
 import { AuthGuard, PaginationDto } from '../../common';
-import { CreateUserDto, UpdateUserDto } from './dto';
+
+import { UpdateUserDto } from './dto';
+
+import { Role } from '@prisma/client';
+
+import { RolesGuard, Roles } from '../../common';
 
 @Controller('users')
 @UseGuards(AuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
 
   @Get('email/:email')
   findByEmail(@Param('email') email: string) {
@@ -46,6 +45,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

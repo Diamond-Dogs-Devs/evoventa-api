@@ -44,6 +44,17 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
       );
     }
 
+    const invalidItems = items.filter(
+      (item) => item.criticalStock > item.lowStock,
+    );
+
+    if (invalidItems.length > 0) {
+      throw new HttpException(
+        'criticalStock cannot be greater than lowStock',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const productIds = items.map((item) => item.productId);
 
     const products = await this.productsService.validateProducts(productIds);
@@ -54,7 +65,7 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
 
     if (notFound.length > 0) {
       throw new HttpException(
-        `Products not found: ${notFound.map((i) => i.productId).join(', ')}`,
+        `Products not found: ${notFound.map((item) => item.productId).join(', ')}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -70,6 +81,8 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
               data: items.map((item) => ({
                 productId: item.productId,
                 quantity: item.quantity,
+                lowStock: item.lowStock,
+                criticalStock: item.criticalStock,
               })),
             },
           },
@@ -79,6 +92,8 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
             select: {
               productId: true,
               quantity: true,
+              lowStock: true,
+              criticalStock: true,
             },
           },
         },
@@ -186,6 +201,17 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
     const { items, ...data } = updateInventoryDto;
 
     if (items?.length) {
+      const invalidItems = items.filter(
+        (item) => item.criticalStock > item.lowStock,
+      );
+
+      if (invalidItems.length > 0) {
+        throw new HttpException(
+          'criticalStock cannot be greater than lowStock',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const productIds = items.map((item) => item.productId);
 
       await this.productsService.validateProducts(productIds);
@@ -232,12 +258,16 @@ export class InventoryService extends PrismaClient implements OnModuleInit {
 
           update: {
             quantity: item.quantity,
+            lowStock: item.lowStock,
+            criticalStock: item.criticalStock,
           },
 
           create: {
             inventoryId: id,
             productId: item.productId,
             quantity: item.quantity,
+            lowStock: item.lowStock,
+            criticalStock: item.criticalStock,
           },
         }),
       ),

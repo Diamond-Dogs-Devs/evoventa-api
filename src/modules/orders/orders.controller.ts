@@ -80,7 +80,9 @@ export class OrdersController {
   }
 
   @Delete(':id')
-  deleteOrder(@Param('id') id: string, @Body('isAdmin') isAdmin: boolean) {
+  deleteOrder(@Param('id') id: string, @GetUser() user: CurrentUser) {
+    const isAdmin = user.role === 'ADMIN';
+
     return this.ordersService.deleteOrder(id, isAdmin);
   }
 }

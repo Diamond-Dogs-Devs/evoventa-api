@@ -2,5 +2,7 @@ export * from './dto/pagination.dto';
 export * from './exceptions/HttpCustomExceptionFilter';
 export * from './guards/auth.guard';
 export * from './guards/decorators';
+export * from './guards/roles.guard';
+
 export * from './interfaces/current-user.interface';
 export { default as cloudinary } from './libs/cloudinary';
