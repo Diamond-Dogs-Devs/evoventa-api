@@ -1,10 +1,18 @@
-import { IsString, IsNumber, IsPositive } from 'class-validator';
+import { IsString, IsNumber, IsPositive, IsInt } from 'class-validator';
 
 export class InventoryItemDto {
   @IsString()
-  productId: string;
+  productId!: string;
 
   @IsNumber()
   @IsPositive()
-  quantity: number;
+  quantity!: number;
+
+  @IsInt()
+  @IsPositive()
+  lowStock!: number;
+
+  @IsInt()
+  @IsPositive()
+  criticalStock!: number;
 }
