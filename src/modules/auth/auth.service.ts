@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  Res,
+} from '@nestjs/common';
 
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
@@ -6,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { JWTPayload } from './interfaces/jwt-payload.interface';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService extends PrismaClient {
@@ -78,10 +85,11 @@ export class AuthService extends PrismaClient {
     }
 
     const { password: _, ...rest } = user;
+    const token = await this.signJWT(rest);
 
     return {
       user: rest,
-      token: await this.signJWT(rest),
+      token,
     };
   }
 }

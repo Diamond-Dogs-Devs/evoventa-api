@@ -8,6 +8,7 @@ import { ClientsModule } from './modules/clients/clients.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { CacheModule } from './modules/cache/cache.module';
+import { FinancialModule } from './modules/finance/finance.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CacheModule } from './modules/cache/cache.module';
     InventoryModule,
     CloudinaryModule,
     CacheModule,
+    FinancialModule,
   ],
   controllers: [AppController],
 })
