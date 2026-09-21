@@ -1,19 +1,21 @@
-import {
-  createParamDecorator,
-  ExecutionContext,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export const GetToken = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (_data: unknown, ctx: ExecutionContext): string | undefined => {
     const request = ctx.switchToHttp().getRequest();
 
-    if (!request.token) {
-      throw new InternalServerErrorException(
-        'Token not found in request (AuthGuard called?)',
-      );
+    const authorization = request.headers.authorization;
+
+    if (!authorization) {
+      return undefined;
     }
 
-    return request.token;
+    const [type, token] = authorization.split(' ');
+
+    if (type !== 'Bearer') {
+      return undefined;
+    }
+
+    return token;
   },
 );

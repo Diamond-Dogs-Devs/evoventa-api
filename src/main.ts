@@ -25,6 +25,10 @@ async function bootstrap() {
     credentials: true,
   });
 
+  app.enableCors({
+    origin: 'http://localhost:4000',
+    credentials: true,
+  });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
