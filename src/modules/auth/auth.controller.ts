@@ -1,16 +1,9 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
 import { AuthService } from './auth.service';
 
-import {
-  AuthGuard,
-  CurrentUser,
-  GetToken,
-  GetUser,
-  Roles,
-  RolesGuard,
-} from '../../common';
+import { AuthGuard, GetToken, Roles, RolesGuard } from '../../common';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { Response } from 'express';
 @Controller('auth')
