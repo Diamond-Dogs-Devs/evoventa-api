@@ -25,9 +25,10 @@ export class AuthController {
     const data = await this.authService.loginUser(loginUserDto);
     response.status(200).cookie('access_token', data.token, {
       httpOnly: true,
-      //secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 1000 * 60 * 60 * 24,
+      path: '/',
     });
     return data;
   }
