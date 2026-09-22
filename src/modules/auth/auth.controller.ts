@@ -44,4 +44,17 @@ export class AuthController {
   verifyToken(@GetToken() token: string) {
     return this.authService.verifyToken(token);
   }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.status(200).clearCookie('access_token', {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return {
+      success: true,
+    };
+  }
 }
