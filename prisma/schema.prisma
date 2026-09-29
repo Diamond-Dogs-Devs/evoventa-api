@@ -61,6 +61,8 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  OrderItem OrderItem[]
+
   @@index([status])
   @@index([isActive])
 }
@@ -143,6 +145,7 @@ model Order {
 model OrderItem {
   id        String @id @default(uuid())
   productId String
+  product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   price     Float
 
